@@ -20,7 +20,7 @@ Note this is not a general purpose game engine. Feel free to make a similar (or 
 # Dependencies:
 * Python 3
 * Requires presence of the [curses](https://docs.python.org/3/howto/curses.html) library which is usually pre-installed.
-* Should run in any Linux, ChromeOS, MacOS shell. (Not on Windows where Python curses does not work out of the box.)
+* Should run in any Linux or MacOS shell. (Not on Windows where Python curses does not work out of the box.)
 
 # To grok:
 * You may want to start in main() to get a sense for the game event loop.
@@ -31,13 +31,15 @@ Note this is not a general purpose game engine. Feel free to make a similar (or 
 * python game_test.py
 
 # Exercises to modify the code in increasing order of difficulty:
-* Change ENEMIES_INITIAL_COUNT to 10, save, run this more challenging version.
+* Change ENEMIES_INITIAL_COUNT to 10, save, and run this more challenging version.
 * Edit the strings that represent the tank or the martians.
 * Change the edge_strategy for the various lasers and bombs from DISAPPEAR to BOUNCE and wreak havoc on the scene!
 * Notice how time.time() is used to ensure the player does not fire lasers too often. Introduce the same logic for Rockets.
 * Read the various documentation for "label" property of objects. Given the code as is, do you think a bomb sent by a martian 
 can hurt another martian? Try to test it out by creating two martians, one above the other, with speed 0 so that they stay put.
 Does the bottom one die?
+* Notice the "0" in the middle of the body of the small martians. What if you made that number dynamic, to represent their
+current health? So show a "5" or "4" or "1" depending on the martian.health property.
 * Introduce "regeneration" logic where your player can gain back some of the lost health through the passage of time.
 * Write more unit tests for all helper functions and place them in game_test.py
 Note: main() is the most difficult to test as its core functionality is not to compute and return something, but to produce side effects (painting various chars on the screen). How would you test it in an automated way?
