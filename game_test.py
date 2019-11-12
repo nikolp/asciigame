@@ -1,5 +1,14 @@
+"""Unit tests for game.py"""
 import unittest
 import game
+
+
+class ModelTest(unittest.TestCase):
+  def testMoveFailsIfSetPositionWasNotCalled(self):
+    screen_width, screen_height = 50, 30
+    obj = game.Model()
+    with self.assertRaisesRegex(RuntimeError, "set_position"):
+      obj.move(screen_width, screen_height)
 
 
 class MultiCharObjTest(unittest.TestCase):
@@ -176,7 +185,8 @@ class MakeAndInstallPlayerHealthObjectTest(unittest.TestCase):
 
 class MakeEnemiesTest(unittest.TestCase):
   def testMakesRightAmount(self):
-    enemies = game.MakeEnemies(10)
+    screen_width, screen_height = 50, 30
+    enemies = game.MakeEnemies(10, screen_width, screen_height)
     # It's a bit hard to test details of the enemies since there is a random
     # choice being made. TODO: mock random.randint for more detailed checks.
     self.assertEqual(10, len(enemies))

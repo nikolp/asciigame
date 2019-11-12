@@ -56,9 +56,7 @@ class Model(object):
   """
   def __init__(self):
     self.set_radius(0, 0)
-    # Set some really crazy default position so code crashes in obvious
-    # way if you start using an object before explicitly placing it somewhere.
-    self.set_position(-99, -99)
+    self.set_position(None, None)
     self.set_speed(0)
     self.set_direction(1, 1)
     self.set_edge_strategy(EdgeStrategy.BOUNCE)
@@ -95,10 +93,10 @@ class Model(object):
     """Specifies the dimensions of the object. See more about this in
     MultiCharObj. Basically the object is a box of width = 2*x_radius + 1 chars
     and height = 2*y_radius + 1 characters.
-    TODO: Make this private or protected. End-users of this class would typically
-    not call this directly, but specify the strings that need to be printed
-    to display this object. From the size of those strings, dimensions can
-    be derived. (See the MultiCharObj constructor)
+    TODO: Make this private or protected. End-users of this class would
+    typically not call this directly, but specify the strings that need to be
+    printed to display this object. From the size of those strings, dimensions
+    can be derived. (See the MultiCharObj constructor)
     """
     self.x_radius = x_radius
     self.y_radius = y_radius
@@ -141,7 +139,8 @@ class Model(object):
     """
     direction_len = math.sqrt(x*x+y*y)
     if direction_len < 0.001:
-      raise ValueError("Bad direction, vector size too small: {}, {}".format(x,y))
+      raise ValueError("Bad direction, vector size too small: {}, {}".format(
+          x, y))
     self.x_speed = self.speed * x / direction_len
     self.y_speed = self.speed * y / direction_len
 
@@ -192,6 +191,11 @@ class Model(object):
       False: if object should disappear from game
       True: in all other cases
     """
+    # While 0 is a very reasonable default speed, there is no reasonable
+    # default value for object coordinates. Ensure they were explicitly set.
+    if self.x is None or self.y is None:
+      raise RuntimeError("Initial position not set. Did you forget to call"
+                         " set_position()?")
     # Where should I be next?
     x, y = self.propose_move(self.x, self.y, self.x_speed, self.y_speed)
     # If will be out of bounds, switch direction -now- or disappear -forever-
