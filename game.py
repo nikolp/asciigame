@@ -127,7 +127,8 @@ class Model(object):
     now if you increase FRAMES_PER_SECOND, the game speeds up. In theory,
     one should simply increase FRAMES_PER_SECOND for a smoother response time
     and rendering experience, (if the computer can handle it) and objects
-    should continue moving at previous observable pace.
+    should continue moving at previous observable pace. So speed should
+    really be measured as chars positions per second, not per frame.
     """
     self.saved_speed = speed
     self.speed = speed
