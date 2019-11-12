@@ -15,6 +15,7 @@ Note this is not a general purpose game engine. Feel free to make a similar (or 
 * Space: shoot a laser
 * R: shoot a rocket
 * Q: quit the game
+* Health: watch the "HEALTH" bar located in top left section of the screen. When it reaches zero, you lose.
 
 # Dependencies:
 * Python 3
@@ -24,6 +25,10 @@ Note this is not a general purpose game engine. Feel free to make a similar (or 
 # To grok:
 * You may want to start in main() to get a sense for the game event loop.
 * But eventually you will have to read everything.
+
+# To test:
+* Ensure your default python is python 3.3 or higher
+* python game_test.py
 
 # Exercises to modify the code in increasing order of difficulty:
 * Change ENEMIES_INITIAL_COUNT to 10, save, run this more challenging version.
