@@ -27,6 +27,8 @@ DEFAULT_INITIAL_HEALTH = 5
 # What is the most health the player can have. Need a fixed value so we can
 # draw the "health bar" on screen in consistent way.
 PLAYER_HEALTH_MAX = DEFAULT_INITIAL_HEALTH
+# How long it takes for the player's laser gun to reload in between shots.
+LASER_RELOAD_TIME_SEC = 0.5
 # After game is won or lost, for how many seconds to show the
 # "game over" or "game won" banner before the program exits.
 GAMEWINORLOSE_WAIT = 3
@@ -231,37 +233,6 @@ class Model(object):
     """See the docs for HaveObjectsCollided()"""
     self.can_collide = collide
 
-  def set_shoot_interval(self, t):
-    """How often the object is allowed to shoot, in seconds.
-    Set it 0 if this object never shoots.
-    """
-    self.shoot_interval = t
-    self.last_shot = time.time()
-
-  def try_to_shoot(self):
-    """Whenever allowed to do so, shoot.
-    Currently hardcoded / assumed that anybody allowed to shoot is really
-    a martian so the projectile goes downward toward the player.
-
-    Returns:
-      The laser/bomb/rocket whatever projectile object just got created.
-      None if no shot happened.
-    """
-    if self.shoot_interval == 0.0:
-      return None
-    if time.time() > self.last_shot + self.shoot_interval + random.uniform(
-        -1, 1):
-      self.last_shot = time.time()
-      bomb = Ball('|')
-      bomb.set_label('BOMB')
-      bomb.set_health(1)
-      bomb.set_position(self.x, self.y+self.y_radius+1)
-      bomb.set_speed(1)
-      bomb.set_direction(0, 1)
-      bomb.set_edge_strategy(EdgeStrategy.DISAPPEAR)
-      return bomb
-    return None
-
 
 class MultiCharObj(Model):
   """The graphical representation of an object in the game.
@@ -305,7 +276,6 @@ XXX1XXX
               len(string), 2*x_radius + 1, x_radius))
     self.set_radius(x_radius, y_radius)
     self.strings = strings
-    self.set_shoot_interval(0.0)
 
   def draw(self, stdscr):
     """Executes the actual curses command to display object on console.
@@ -326,6 +296,79 @@ class Ball(MultiCharObj):
   """Convenience class for objects that are exactly one character big."""
   def __init__(self, char):
     super(Ball, self).__init__(0, 0, [char])
+
+
+class Enemy(MultiCharObj):
+  """A martian.
+
+  While Model, MultiCharObj, Ball are fairly generic, this class is quite
+  specific to the needs of this game.
+  """
+  def __init__(self, x_radius, y_radius, strings):
+    super(Enemy, self).__init__(x_radius, y_radius, strings)
+    self.set_shoot_interval(0.0)
+
+  def set_shoot_interval(self, t):
+    """How often the object is allowed to shoot, in seconds (float)
+    Set to 0.0 if you want it to stop shooting for a long time.
+    Set it back to positive value if you want it to start up again.
+    """
+    self.shoot_interval = t
+    self.last_shot = time.time()
+
+  def try_to_shoot(self):
+    """Whenever allowed to do so, shoot.
+
+    Returns:
+      The laser/bomb/rocket whatever projectile object just got created.
+      None if no shot happened.
+    """
+    if self.shoot_interval == 0.0:
+      return None
+    if time.time() > self.last_shot + self.shoot_interval + random.uniform(
+        -1, 1):
+      self.last_shot = time.time()
+      bomb = Ball('|')
+      bomb.set_label('BOMB')
+      bomb.set_health(1)
+      bomb.set_position(self.x, self.y+self.y_radius+1)
+      bomb.set_speed(1)
+      bomb.set_direction(0, 1)
+      bomb.set_edge_strategy(EdgeStrategy.DISAPPEAR)
+      return bomb
+    return None
+
+
+class TankPlayer(MultiCharObj):
+  """The main player.
+
+  While Model, MultiCharObj, Ball are fairly generic, this class is quite
+  specific to the needs of this game.
+  """
+  def __init__(self, x_radius, y_radius, strings):
+    super(TankPlayer, self).__init__(x_radius, y_radius, strings)
+    self.laser_shot_time = 0
+
+  def shoot_laser(self):
+    """Attempts to shoot laser. May fail if laser gun is still reloading,
+    or out of ammo, etc.
+
+    Returns:
+      The laser projectile object that just got shot (if shot success)
+      None (if shot failure)
+    """
+    time_now = time.time()
+    if time_now < self.laser_shot_time + LASER_RELOAD_TIME_SEC:
+      return None
+    self.laser_shot_time = time_now
+    laser = Ball('/')
+    laser.set_label('B')
+    # Start the laser a bit above you, don't want to shoot yourself.
+    laser.set_position(self.x + 2, self.y - 2)
+    laser.set_speed(1.5)
+    laser.set_direction(1,-1)
+    laser.set_edge_strategy(EdgeStrategy.DISAPPEAR)
+    return laser
 
 
 def HaveObjectsCollided(a, b):
@@ -434,9 +477,9 @@ def UpdatePlayerHealth(player, player_health_obj):
 
 def MakePlayer():
   """Initializes and returns the main player object."""
-  player = MultiCharObj(3, 1, ["    // ",
-                               "BBBBBB ",
-                               "CCCCCCC"])
+  player = TankPlayer(3, 1, ["    // ",
+                             "BBBBBB ",
+                             "CCCCCCC"])
   player.set_label('P')
   player.set_speed(0.5)
   player.set_direction(1, 0)
@@ -536,11 +579,12 @@ def MakeEnemies(num_enemies, screen_width, screen_height):
   for _ in range(num_enemies):  # Create this many martians
     # Randomly pick among two different styles of martian
     if random.randint(0, 1) == 0:
-      m = MultiCharObj(1, 1, [" A ",
-                              "(0)",
-                              "III"])
+      m = Enemy(1, 1, [
+          " A ",
+          "(0)",
+          "III"])
     else:
-      m = MultiCharObj(4, 3, [
+      m = Enemy(4, 3, [
 "    A    ",
 "   AAA   ",
 "  | \" |  ",
@@ -608,18 +652,9 @@ def HandleKeyPress(player, objects, key):
     # Stop in place
     player.stop()
   elif ch == ' ':
-    # Shoot a laser, but no-op if laser was recently fired.
-    if time.time() > player.last_shot + 0.5:
-      # Enough time has passed, allow a shot but record its time.
-      player.last_shot = time.time()
-      b = Ball('/')
-      b.set_label('B')
-      # Start the laser a bit above you, don't want to shoot yourself.
-      b.set_position(player.x+2, player.y-2)
-      b.set_speed(1.5)
-      b.set_direction(1,-1)
-      b.set_edge_strategy(EdgeStrategy.DISAPPEAR)
-      objects.append(b)
+    laser = player.shoot_laser()
+    if laser:
+      objects.append(laser)
   elif ch == 'r':
     # Shoot a rocket
     b = MultiCharObj(1, 1, [" A ",
@@ -665,9 +700,7 @@ def main(stdscr):
     RunCollisionDetection(objects)
 
     dead = RemoveDeadObjects(objects)
-    # Keep track which enemies still alive. In theory we just need the count,
-    # but just in case, records exactly which ones they are.
-    enemies = enemies.difference(dead)
+    enemies = enemies.difference(dead)  # Keep the alive ones only
 
     if not game_has_ended:
       # Are we dead or are all our enemies dead?
@@ -687,8 +720,8 @@ def main(stdscr):
     UpdatePlayerHealth(player, player_health)
 
     # Anybody who is allowed to shoot a projectile, now is the time.
-    for obj in objects:
-      projectile = obj.try_to_shoot()
+    for enemy in enemies:
+      projectile = enemy.try_to_shoot()
       if projectile:
         objects.append(projectile)
 

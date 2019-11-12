@@ -1,5 +1,6 @@
 """Unit tests for game.py"""
 import unittest
+from unittest import mock
 import game
 
 
@@ -23,6 +24,27 @@ class MultiCharObjTest(unittest.TestCase):
                          "FOO",
                          "FO",   # Mistake on this line.
                         ])
+
+
+class TankPlayerTest(unittest.TestCase):
+  def testShootLaserNothingHappensIfNotEnoughTimeHasPassed(self):
+    player = game.MakePlayer()
+    player.set_position(10, 10)
+    # First shot works
+    self.assertIsNotNone(player.shoot_laser())
+    # But shooting again too soon should not work
+    self.assertIsNone(player.shoot_laser())
+
+  @mock.patch.object(game.time, 'time', autospec=True)
+  def testShootLaserNothingHappensIfNotEnoughTimeHasPassed(self, mock_time):
+    player = game.MakePlayer()
+    player.set_position(10, 10)
+    mock_time.return_value = 1.0
+    # First shot works
+    self.assertIsNotNone(player.shoot_laser())
+    # But now, have to be patient... Let's fast forward time...
+    mock_time.return_value += (game.LASER_RELOAD_TIME_SEC + 0.1)
+    self.assertIsNotNone(player.shoot_laser())
 
 
 class HaveObjectsCollidedTest(unittest.TestCase):
@@ -59,7 +81,7 @@ class RunCollisionDetectionTest(unittest.TestCase):
 
     game.RunCollisionDetection([a, b])
 
-    self.assertEqual(b_previous_health, b.health, "B's health should not change.")
+    self.assertEqual(b_previous_health, b.health, "B health should not change.")
 
   def testYesCollissionButSameLabelHealthStaysSame(self):
     a, b = self.MakeTwoCollidingObjects()
