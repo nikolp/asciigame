@@ -27,7 +27,7 @@ Note this is not a general purpose game engine. Feel free to make a similar (or 
 * But eventually you will have to read everything.
 
 # To test:
-* Ensure your default python is python 3.3 or higher
+* Ensure your default python is python 3.3 or higher.
 * python game_test.py
 
 # Exercises to modify the code in increasing order of difficulty:
