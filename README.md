@@ -3,6 +3,8 @@ Game inspired by [Space Invaders](https://en.wikipedia.org/wiki/Space_Invaders).
 
 Note this is not a general purpose game engine. Feel free to make a similar (or different) game via copying the file and editing it to your needs (while honoring the license).
 
+See [demo video](https://youtu.be/_4bB5QDCqow).
+
 # To run:
 * Download the single-file source code game.py
 * cd to that directory
