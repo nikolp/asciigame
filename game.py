@@ -123,6 +123,8 @@ class Model(object):
     """Like in physics, sets the absolute value of speed. Measured in characters
     per cycle, i.e. number of discrete char spaces object will move during one
     frame.
+    TODO: Remove limitation: right now you always have to call set_speed() before
+    set_direction() when initializing new objects in the game.
     TODO: Make it more "absolute" so it is not impacted by frame rate. Right
     now if you increase FRAMES_PER_SECOND, the game speeds up. In theory,
     one should simply increase FRAMES_PER_SECOND for a smoother response time

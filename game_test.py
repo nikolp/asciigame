@@ -30,18 +30,16 @@ class TankPlayerTest(unittest.TestCase):
   def testShootLaserNothingHappensIfNotEnoughTimeHasPassed(self):
     player = game.MakePlayer()
     player.set_position(10, 10)
-    # First shot works
-    self.assertIsNotNone(player.shoot_laser())
-    # But shooting again too soon should not work
-    self.assertIsNone(player.shoot_laser())
+    self.assertIsNotNone(player.shoot_laser(), 'First shot should just work')
+    self.assertIsNone(player.shoot_laser(),
+                      'Shooting too soon after previous should should not work')
 
   @mock.patch.object(game.time, 'time', autospec=True)
-  def testShootLaserNothingHappensIfNotEnoughTimeHasPassed(self, mock_time):
+  def testShootLaserWorksIfEnoughTimeHasPassed(self, mock_time):
     player = game.MakePlayer()
     player.set_position(10, 10)
     mock_time.return_value = 1.0
-    # First shot works
-    self.assertIsNotNone(player.shoot_laser())
+    self.assertIsNotNone(player.shoot_laser(), 'First shot should just work')
     # But now, have to be patient... Let's fast forward time...
     mock_time.return_value += (game.LASER_RELOAD_TIME_SEC + 0.1)
     self.assertIsNotNone(player.shoot_laser())
@@ -212,6 +210,41 @@ class MakeEnemiesTest(unittest.TestCase):
     # It's a bit hard to test details of the enemies since there is a random
     # choice being made. TODO: mock random.randint for more detailed checks.
     self.assertEqual(10, len(enemies))
+
+class MoveTest(unittest.TestCase):
+  def testMoveInboundsReturnsTrue(self):
+    height, width = 20, 30
+    obj = game.Ball('*')
+    obj.set_position(width/2, height/2)
+    obj.set_direction(1.0, 0.0)
+    obj.set_speed(1)
+    self.assertTrue(obj.move(height, width))
+
+  def testMoveOutsideWithoutBounceStrategyReturnsFalse(self):
+    height, width = 20, 30
+    obj = game.Ball('*')
+    # Place object at rightmost edge, and speeding to right so at next move
+    # it leaves the boundaries
+    obj.set_position(width-1, height/2)
+    obj.set_speed(1)
+    obj.set_direction(1.0, 0.0)
+    obj.set_edge_strategy(game.EdgeStrategy.DISAPPEAR)
+    self.assertFalse(obj.move(height, width))
+
+  def testMoveOutsideWithBounceStrategyCausesBounce(self):
+    height, width = 20, 30
+    obj = game.Ball('*')
+    # Place object at rightmost edge, and speeding to right so at next move
+    # it leaves the boundaries
+    obj.set_position(width-1, height/2)
+    obj.set_speed(1)
+    obj.set_direction(1.0, 0.0)
+    obj.set_edge_strategy(game.EdgeStrategy.BOUNCE)
+    self.assertGreater(obj.x_speed, 0, 'Should be moving right initially.')
+    object_still_in_game = obj.move(height, width)
+    self.assertTrue(object_still_in_game)
+    self.assertLess(obj.x_speed, 0, 'Should be moving left after bouncing.')
+
 
 if __name__ == '__main__':
   unittest.main()
